@@ -34,9 +34,25 @@
     .courses { padding: 20px 6% 60px; }
     .courses h2 { font-size: 26px; margin-bottom: 24px; }
     .course-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 20px; }
-    .course-item { background: #1e293b; border: 1px solid #334155; border-radius: 14px; padding: 20px; display: flex; justify-content: space-between; align-items: center; transition: .2s; }
+    .course-item { background: #1e293b; border: 1px solid #334155; border-radius: 14px; padding: 20px; display: flex; justify-content: space-between; align-items: center; transition: .2s; cursor: pointer; }
     .course-item:hover { border-color: #60a5fa; transform: translateY(-2px); }
     .course-item .tag { font-size: 12px; background: #334155; padding: 3px 10px; border-radius: 999px; }
+
+    /* 弹窗 */
+    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, .6); z-index: 100; justify-content: center; align-items: center; padding: 20px; }
+    .modal-overlay.show { display: flex; }
+    .modal { background: #1e293b; border: 1px solid #334155; border-radius: 16px; max-width: 480px; width: 100%; padding: 28px; animation: pop .25s ease; }
+    @keyframes pop { from { opacity: 0; transform: scale(.9); } to { opacity: 1; transform: scale(1); } }
+    .modal .close { float: right; background: none; border: none; color: #94a3b8; font-size: 24px; cursor: pointer; }
+    .modal .close:hover { color: #f87171; }
+    .modal h2 { font-size: 22px; margin: 8px 0 6px; color: #f8fafc; }
+    .modal .tag { display: inline-block; font-size: 12px; background: #334155; padding: 3px 10px; border-radius: 999px; margin-bottom: 14px; }
+    .modal .desc { font-size: 14px; color: #94a3b8; margin-bottom: 16px; }
+    .modal .meta { display: flex; gap: 20px; font-size: 14px; color: #60a5fa; padding-bottom: 16px; border-bottom: 1px solid #334155; margin-bottom: 16px; }
+    .modal ul { list-style: none; font-size: 14px; }
+    .modal li { padding: 6px 0; color: #cbd5e1; }
+    .modal li::before { content: "▸ "; color: #60a5fa; }
+    .modal .btn { display: inline-block; margin-top: 18px; }
 
     /* 页脚 */
     .footer { text-align: center; padding: 24px; border-top: 1px solid #334155; color: #64748b; font-size: 14px; }
@@ -74,14 +90,74 @@
   <section class="courses">
     <h2>热门课程</h2>
     <div class="course-list">
-      <div class="course-item"><div><h3>Python 与 AI 基础</h3></div><span class="tag">入门</span></div>
-      <div class="course-item"><div><h3>机器学习实战</h3></div><span class="tag">进阶</span></div>
-      <div class="course-item"><div><h3>深度学习原理</h3></div><span class="tag">进阶</span></div>
-      <div class="course-item"><div><h3>大模型应用开发</h3></div><span class="tag">热门</span></div>
+      <div class="course-item" data-course="0"><div><h3>Python 与 AI 基础</h3></div><span class="tag">入门</span></div>
+      <div class="course-item" data-course="1"><div><h3>机器学习实战</h3></div><span class="tag">进阶</span></div>
+      <div class="course-item" data-course="2"><div><h3>深度学习原理</h3></div><span class="tag">进阶</span></div>
+      <div class="course-item" data-course="3"><div><h3>大模型应用开发</h3></div><span class="tag">热门</span></div>
     </div>
   </section>
 
   <footer class="footer">© 2026 AI 学堂 · 让每个人都能学会人工智能</footer>
+
+  <!-- 课程详情弹窗 -->
+  <div class="modal-overlay" id="modal">
+    <div class="modal">
+      <button class="close" onclick="closeModal()">✕</button>
+      <span class="tag" id="m-tag"></span>
+      <h2 id="m-title"></h2>
+      <p class="desc" id="m-desc"></p>
+      <div class="meta">
+        <span id="m-duration"></span>
+        <span id="m-level"></span>
+        <span id="m-lessons"></span>
+      </div>
+      <ul id="m-content"></ul>
+      <a href="#" class="btn" onclick="closeModal()">立即报名</a>
+    </div>
+  </div>
+
+  <script>
+    // 课程数据
+    const courses = [
+      { title: "Python 与 AI 基础", tag: "入门", desc: "面向零基础学员，掌握 Python 语法与 AI 入门概念。", duration: "20 课时", level: "零基础", lessons: "12 节课", content: ["环境搭建与开发工具", "Python 基础语法", "数据处理入门", "AI 概念与行业应用"] },
+      { title: "机器学习实战", tag: "进阶", desc: "从算法原理到模型训练，带你完成真实机器学习项目。", duration: "32 课时", level: "初中级", lessons: "18 节课", content: ["监督学习与回归", "分类与聚类算法", "模型评估与调优", "实战：房价预测项目"] },
+      { title: "深度学习原理", tag: "进阶", desc: "深入理解神经网络与深度学习核心机制。", duration: "40 课时", level: "中级", lessons: "20 节课", content: ["神经网络基础", "反向传播算法", "CNN / RNN 架构", "PyTorch 实战练习"] },
+      { title: "大模型应用开发", tag: "热门", desc: "基于 LLM 构建智能应用，掌握提示词工程与 RAG 开发。", duration: "36 课时", level: "中级", lessons: "16 节课", content: ["大模型原理概览", "提示词工程", "RAG 知识库搭建", "实战：AI 助手应用"] }
+    ];
+
+    const modal = document.getElementById("modal");
+
+    function openModal(index) {
+      const c = courses[index];
+      document.getElementById("m-tag").textContent = c.tag;
+      document.getElementById("m-title").textContent = c.title;
+      document.getElementById("m-desc").textContent = c.desc;
+      document.getElementById("m-duration").textContent = "⏱ " + c.duration;
+      document.getElementById("m-level").textContent = "📊 " + c.level;
+      document.getElementById("m-lessons").textContent = "📚 " + c.lessons;
+      document.getElementById("m-content").innerHTML = c.content.map(item => "<li>" + item + "</li>").join("");
+      modal.classList.add("show");
+    }
+
+    function closeModal() {
+      modal.classList.remove("show");
+    }
+
+    // 点击课程打开弹窗
+    document.querySelectorAll(".course-item").forEach(item => {
+      item.addEventListener("click", () => openModal(Number(item.dataset.course)));
+    });
+
+    // 点击遮罩关闭
+    modal.addEventListener("click", e => {
+      if (e.target === modal) closeModal();
+    });
+
+    // ESC 关闭
+    document.addEventListener("keydown", e => {
+      if (e.key === "Escape") closeModal();
+    });
+  </script>
 
 </body>
 </html>
